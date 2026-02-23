@@ -1,6 +1,6 @@
 import pytest
 
-from app import infer
+from app import infer, create_app
 
 
 def test_infer_defaults():
@@ -18,3 +18,21 @@ def test_infer_edge_cases():
                 r = infer(t, h, c)
                 assert "action_label" in r
                 assert "comfort_score" in r
+
+
+def test_api_infer_validation_and_success():
+    app = create_app({"TESTING": True})
+    client = app.test_client()
+
+    # Valid payload
+    resp = client.post("/api/infer", json={"temperature": 25, "humidity": 50, "co2": 600})
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data["status"] == "ok"
+    assert "action_value" in data
+
+    # Invalid payload (wrong types)
+    resp2 = client.post("/api/infer", json={"temperature": "hot", "humidity": "wet", "co2": "low"})
+    assert resp2.status_code == 400
+    data2 = resp2.get_json()
+    assert data2["status"] == "error"
