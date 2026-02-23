@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Fuzzy Comfort Control System · ML Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+</head>
+<body>
+
+<!-- SCANLINE OVERLAY -->
+<div class="scanlines" aria-hidden="true"></div>
+
+<!-- ═══ HEADER ═══ -->
+<header class="header">
+  <div class="header-inner">
+    <div class="brand">
+      <div class="brand-logo">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+          <polygon points="16,2 30,10 30,22 16,30 2,22 2,10" fill="none" stroke="#00e5ff" stroke-width="1.5"/>
+          <polygon points="16,8 24,13 24,19 16,24 8,19 8,13" fill="none" stroke="#00e5ff" stroke-width="1" opacity="0.5"/>
+          <circle cx="16" cy="16" r="3" fill="#00e5ff"/>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <span class="brand-name">FuzzyComfort<span class="brand-accent">CS</span></span>
+        <span class="brand-tag">Mamdani Inference Engine · v2.0</span>
+      </div>
+    </div>
+    <div class="header-status">
+      <span class="status-dot"></span>
+      <span class="status-text">ENGINE ONLINE</span>
+      <div class="header-time" id="clock">—</div>
+    </div>
+    <nav class="header-nav">
+      <a href="#control" class="nav-item active" data-section="control">Control</a>
+      <a href="#inference" class="nav-item" data-section="inference">Inference</a>
+      <a href="#membership" class="nav-item" data-section="membership">MF Plots</a>
+      <a href="#architecture" class="nav-item" data-section="architecture">Architecture</a>
+    </nav>
+    <button class="hamburger" id="hamburger" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<!-- MOBILE NAV -->
+<div class="mobile-nav" id="mobile-nav">
+  <a href="#control" class="mob-nav-item">Control Panel</a>
+  <a href="#inference" class="mob-nav-item">Inference Trace</a>
+  <a href="#membership" class="mob-nav-item">MF Plots</a>
+  <a href="#architecture" class="mob-nav-item">Architecture</a>
+</div>
+
+<!-- ═══ HERO BANNER ═══ -->
+<section class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <div class="hero-chip">AI · ML · Fuzzy Logic · HVAC Optimization</div>
+    <h1 class="hero-title">
+      Intelligent Indoor<br/>
+      <span class="hero-highlight">Comfort Control</span>
+    </h1>
+    <p class="hero-desc">
+      Real-time HVAC decision engine powered by Mamdani fuzzy inference.<br/>
+      25 fuzzy rules · 3 input variables · centroid defuzzification.
+    </p>
+    <div class="hero-metrics">
+      <div class="metric-card">
+        <span class="metric-val">25</span>
+        <span class="metric-lbl">Fuzzy Rules</span>
+      </div>
+      <div class="metric-sep">|</div>
+      <div class="metric-card">
+        <span class="metric-val">3</span>
+        <span class="metric-lbl">Input Variables</span>
+      </div>
+      <div class="metric-sep">|</div>
+      <div class="metric-card">
+        <span class="metric-val">17</span>
+        <span class="metric-lbl">MF Sets</span>
+      </div>
+      <div class="metric-sep">|</div>
+      <div class="metric-card">
+        <span class="metric-val">&lt;5ms</span>
+        <span class="metric-lbl">Inference Time</span>
+      </div>
+    </div>
+  </div>
+  <div class="hero-visual">
+    <canvas id="hero-canvas" width="380" height="280"></canvas>
+  </div>
+</section>
+
+<!-- ═══ CONTROL PANEL ═══ -->
+<section class="section" id="control">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-label">// SENSOR INPUT INTERFACE</div>
+      <h2 class="section-title">Control Panel</h2>
+    </div>
+
+    <div class="control-grid">
+      <!-- Inputs -->
+      <div class="panel input-panel">
+        <div class="panel-header">
+          <span class="panel-icon">⬡</span>
+          <h3 class="panel-title">Sensor Readings</h3>
+          <span class="panel-badge">LIVE</span>
+        </div>
+
+        <!-- Temperature -->
+        <div class="input-block">
+          <div class="input-top">
+            <label class="input-label">
+              <span class="input-icon">🌡</span> Temperature
+            </label>
+            <div class="input-display">
+              <span class="input-val" id="temp-display">22.0</span>
+              <span class="input-unit">°C</span>
+            </div>
+          </div>
+          <div class="slider-wrap">
+            <input type="range" class="slider" id="temp-slider"
+                   min="0" max="50" step="0.5" value="22"/>
+            <div class="slider-track-labels">
+              <span>0</span><span>10</span><span>20</span><span>30</span><span>40</span><span>50</span>
+            </div>
+          </div>
+          <div class="fuzzy-bar" id="temp-bar">
+            <div class="fb-segment" style="--c:#4fc3f7" title="Very Cold"><span>VCold</span></div>
+            <div class="fb-segment" style="--c:#29b6f6" title="Cold"><span>Cold</span></div>
+            <div class="fb-segment" style="--c:#26c6da" title="Cool"><span>Cool</span></div>
+            <div class="fb-segment" style="--c:#00e5ff" title="Comfortable"><span>OK</span></div>
+            <div class="fb-segment" style="--c:#ffca28" title="Warm"><span>Warm</span></div>
+            <div class="fb-segment" style="--c:#ffa726" title="Hot"><span>Hot</span></div>
+            <div class="fb-segment" style="--c:#ef5350" title="Very Hot"><span>VHot</span></div>
+          </div>
+        </div>
+
+        <!-- Humidity -->
+        <div class="input-block">
+          <div class="input-top">
+            <label class="input-label">
+              <span class="input-icon">💧</span> Humidity
+            </label>
+            <div class="input-display">
+              <span class="input-val" id="hum-display">50</span>
+              <span class="input-unit">%</span>
+            </div>
+          </div>
+          <div class="slider-wrap">
+            <input type="range" class="slider" id="hum-slider"
+                   min="0" max="100" step="1" value="50"/>
+            <div class="slider-track-labels">
+              <span>0</span><span>25</span><span>50</span><span>75</span><span>100</span>
+            </div>
+          </div>
+          <div class="fuzzy-bar" id="hum-bar">
+            <div class="fb-segment" style="--c:#d7ccc8"><span>VDry</span></div>
+            <div class="fb-segment" style="--c:#bcaaa4"><span>Dry</span></div>
+            <div class="fb-segment" style="--c:#00e5ff"><span>Normal</span></div>
+            <div class="fb-segment" style="--c:#4dd0e1"><span>Humid</span></div>
+            <div class="fb-segment" style="--c:#0288d1"><span>VHumid</span></div>
+          </div>
+        </div>
+
+        <!-- CO2 -->
+        <div class="input-block">
+          <div class="input-top">
+            <label class="input-label">
+              <span class="input-icon">🌬</span> CO₂ Level
+            </label>
+            <div class="input-display">
+              <span class="input-val" id="co2-display">600</span>
+              <span class="input-unit">ppm</span>
+            </div>
+          </div>
+          <div class="slider-wrap">
+            <input type="range" class="slider" id="co2-slider"
+                   min="300" max="3000" step="10" value="600"/>
+            <div class="slider-track-labels">
+              <span>300</span><span>800</span><span>1400</span><span>2000</span><span>3000</span>
+            </div>
+          </div>
+          <div class="fuzzy-bar" id="co2-bar">
+            <div class="fb-segment" style="--c:#a5d6a7"><span>Fresh</span></div>
+            <div class="fb-segment" style="--c:#66bb6a"><span>Normal</span></div>
+            <div class="fb-segment" style="--c:#ffca28"><span>Elevated</span></div>
+            <div class="fb-segment" style="--c:#ffa726"><span>High</span></div>
+            <div class="fb-segment" style="--c:#ef5350"><span>Danger</span></div>
+          </div>
+        </div>
+
+        <!-- Scenarios -->
+        <div class="scenarios">
+          <div class="scenarios-label">// Quick Scenarios</div>
+          <div class="scenario-grid">
+            <button class="scenario-btn" onclick="setScenario(23,50,600,'Optimal')">
+              <span class="sc-icon">✅</span> Optimal
+            </button>
+            <button class="scenario-btn" onclick="setScenario(34,80,1600,'Hot &amp; Stuffy')">
+              <span class="sc-icon">🥵</span> Hot &amp; Stuffy
+            </button>
+            <button class="scenario-btn" onclick="setScenario(12,25,400,'Cold &amp; Dry')">
+              <span class="sc-icon">🥶</span> Cold &amp; Dry
+            </button>
+            <button class="scenario-btn" onclick="setScenario(28,65,2200,'CO₂ Alert')">
+              <span class="sc-icon">🚨</span> CO₂ Alert
+            </button>
+          </div>
+        </div>
+
+        <button class="infer-btn" id="infer-btn" onclick="runInference()">
+          <span class="infer-btn-inner">
+            <span class="infer-icon">⬡</span>
+            <span>Run Fuzzy Inference</span>
+            <span class="infer-arrow">→</span>
+          </span>
+        </button>
+      </div>
+
+      <!-- Output Panel -->
+      <div class="panel output-panel">
+        <div class="panel-header">
+          <span class="panel-icon">◈</span>
+          <h3 class="panel-title">Inference Output</h3>
+        </div>
+
+        <!-- Action Gauge -->
+        <div class="gauge-wrap">
+          <canvas id="gauge-canvas" width="300" height="170"></canvas>
+          <div class="gauge-label" id="gauge-label">NEUTRAL</div>
+          <div class="gauge-value" id="gauge-value">0.0000</div>
+        </div>
+
+        <!-- KPI Row -->
+        <div class="kpi-row">
+          <div class="kpi">
+            <div class="kpi-val" id="kpi-comfort">—</div>
+            <div class="kpi-lbl">Comfort Score</div>
+            <div class="kpi-bar"><div class="kpi-fill" id="kpi-comfort-bar"></div></div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-val" id="kpi-energy">—</div>
+            <div class="kpi-lbl">Energy Index</div>
+            <div class="kpi-bar"><div class="kpi-fill kpi-fill--energy" id="kpi-energy-bar"></div></div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-val" id="kpi-aqi">—</div>
+            <div class="kpi-lbl">Air Quality</div>
+            <div class="kpi-bar"><div class="kpi-fill kpi-fill--aqi" id="kpi-aqi-bar"></div></div>
+          </div>
+        </div>
+
+        <!-- Action Alert -->
+        <div class="action-alert" id="action-alert">
+          <span class="action-icon" id="action-icon">⬡</span>
+          <div class="action-text">
+            <div class="action-main" id="action-main">Run inference to see HVAC recommendation</div>
+            <div class="action-sub" id="action-sub">Adjust sliders and click Run Fuzzy Inference</div>
+          </div>
+        </div>
+
+        <!-- Rules summary -->
+        <div class="rules-summary" id="rules-summary" style="display:none">
+          <div class="rs-header">
+            <span class="rs-title">Rules Fired</span>
+            <span class="rs-count" id="rules-count">0</span>
+          </div>
+          <div class="rs-list" id="rs-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ INFERENCE TRACE ═══ -->
+<section class="section section--alt" id="inference">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-label">// MAMDANI INFERENCE TRACE</div>
+      <h2 class="section-title">Fuzzification · Rules · Defuzzification</h2>
+    </div>
+    <div class="trace-grid" id="trace-grid">
+      <div class="trace-placeholder">
+        <div class="tp-icon">⬡</div>
+        <div>Run inference to visualize the full fuzzy reasoning pipeline</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ MEMBERSHIP FUNCTION PLOTS ═══ -->
+<section class="section" id="membership">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-label">// MEMBERSHIP FUNCTION VISUALIZATION</div>
+      <h2 class="section-title">Fuzzy Sets &amp; MF Plots</h2>
+    </div>
+    <div class="mf-grid">
+      <div class="mf-card">
+        <div class="mf-card-header">Temperature Input · 7 Fuzzy Sets</div>
+        <canvas id="mf-temp" class="mf-canvas" width="420" height="200"></canvas>
+      </div>
+      <div class="mf-card">
+        <div class="mf-card-header">Humidity Input · 5 Fuzzy Sets</div>
+        <canvas id="mf-hum" class="mf-canvas" width="420" height="200"></canvas>
+      </div>
+      <div class="mf-card">
+        <div class="mf-card-header">CO₂ Input · 5 Fuzzy Sets</div>
+        <canvas id="mf-co2" class="mf-canvas" width="420" height="200"></canvas>
+      </div>
+      <div class="mf-card">
+        <div class="mf-card-header">HVAC Output · 9 Crisp Singletons</div>
+        <canvas id="mf-out" class="mf-canvas" width="420" height="200"></canvas>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ ARCHITECTURE ═══ -->
+<section class="section section--alt" id="architecture">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-label">// SYSTEM ARCHITECTURE</div>
+      <h2 class="section-title">ML Pipeline &amp; Data Flow</h2>
+    </div>
+    <div class="arch-diagram">
+      <!-- Layer 1: Inputs -->
+      <div class="arch-layer">
+        <div class="arch-layer-label">INPUT LAYER</div>
+        <div class="arch-nodes">
+          <div class="arch-node arch-node--input">
+            <span class="an-icon">🌡</span>
+            <span class="an-label">Temperature</span>
+            <span class="an-range">0–50 °C</span>
+          </div>
+          <div class="arch-node arch-node--input">
+            <span class="an-icon">💧</span>
+            <span class="an-label">Humidity</span>
+            <span class="an-range">0–100 %</span>
+          </div>
+          <div class="arch-node arch-node--input">
+            <span class="an-icon">🌬</span>
+            <span class="an-label">CO₂</span>
+            <span class="an-range">0–5000 ppm</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="arch-arrow">→</div>
+
+      <!-- Layer 2: Fuzzification -->
+      <div class="arch-layer">
+        <div class="arch-layer-label">FUZZIFICATION</div>
+        <div class="arch-nodes">
+          <div class="arch-node arch-node--fuzzy">
+            <span class="an-icon">△</span>
+            <span class="an-label">Triangular MF</span>
+            <span class="an-range">trimf(x,a,b,c)</span>
+          </div>
+          <div class="arch-node arch-node--fuzzy">
+            <span class="an-icon">⎤⎦</span>
+            <span class="an-label">Trapezoidal MF</span>
+            <span class="an-range">trapmf(x,a,b,c,d)</span>
+          </div>
+        </div>
+        <div class="arch-note">17 fuzzy sets total</div>
+      </div>
+
+      <div class="arch-arrow">→</div>
+
+      <!-- Layer 3: Inference -->
+      <div class="arch-layer">
+        <div class="arch-layer-label">RULE ENGINE</div>
+        <div class="arch-nodes">
+          <div class="arch-node arch-node--engine">
+            <span class="an-icon">⬡</span>
+            <span class="an-label">Mamdani FIS</span>
+            <span class="an-range">25 IF-THEN rules</span>
+          </div>
+        </div>
+        <div class="arch-note">T-norm: min() · S-norm: max()</div>
+      </div>
+
+      <div class="arch-arrow">→</div>
+
+      <!-- Layer 4: Defuzz -->
+      <div class="arch-layer">
+        <div class="arch-layer-label">DEFUZZIFICATION</div>
+        <div class="arch-nodes">
+          <div class="arch-node arch-node--defuzz">
+            <span class="an-icon">∫</span>
+            <span class="an-label">Centroid COA</span>
+            <span class="an-range">∑(wᵢ·xᵢ) / ∑wᵢ</span>
+          </div>
+        </div>
+        <div class="arch-note">Output: [−1.0, +1.0]</div>
+      </div>
+
+      <div class="arch-arrow">→</div>
+
+      <!-- Layer 5: Output -->
+      <div class="arch-layer">
+        <div class="arch-layer-label">HVAC CONTROL</div>
+        <div class="arch-nodes">
+          <div class="arch-node arch-node--output">
+            <span class="an-icon">❄️</span>
+            <span class="an-label">Cooling / Vent</span>
+            <span class="an-range">−1.0 to −0.1</span>
+          </div>
+          <div class="arch-node arch-node--output arch-node--neutral">
+            <span class="an-icon">✅</span>
+            <span class="an-label">Neutral Hold</span>
+            <span class="an-range">≈ 0.0</span>
+          </div>
+          <div class="arch-node arch-node--output arch-node--heat">
+            <span class="an-icon">🔥</span>
+            <span class="an-label">Heating</span>
+            <span class="an-range">+0.1 to +1.0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tech Stack -->
+    <div class="tech-stack">
+      <div class="ts-label">// TECH STACK</div>
+      <div class="ts-pills">
+        <span class="ts-pill ts-pill--python">Python 3.11</span>
+        <span class="ts-pill ts-pill--flask">Flask 3.x</span>
+        <span class="ts-pill ts-pill--js">Vanilla JS ES6</span>
+        <span class="ts-pill ts-pill--canvas">Canvas API</span>
+        <span class="ts-pill ts-pill--docker">Docker</span>
+        <span class="ts-pill ts-pill--rest">REST API</span>
+        <span class="ts-pill ts-pill--css">CSS Grid / Flex</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FOOTER ═══ -->
+<footer class="footer">
+  <div class="container footer-inner">
+    <div class="footer-brand">FuzzyComfortCS · Mamdani Inference Engine</div>
+    <div class="footer-links">
+      <a href="/api/health" target="_blank">API Health</a>
+      <a href="/api/rules" target="_blank">Rule Set JSON</a>
+      <a href="https://github.com/jawaria-sabir/Fuzzy-Comfort-Control-Requirements-And-Specification" target="_blank">GitHub</a>
+    </div>
+    <div class="footer-copy">© 2024 jawaria-sabir · Enhanced Edition v2.0</div>
+  </div>
+</footer>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
